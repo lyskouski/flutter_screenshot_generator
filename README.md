@@ -41,7 +41,7 @@ flutter test integration_test/capture_test.dart --dart-define=SCREENSHOT_LOCALES
 flutter test integration_test/capture_test.dart --dart-define=SCREENSHOT_STEPS=2_tap
 
 # Skip devices for which a folder already exists
-flutter test integration_test/screenshots/capture_test.dart --dart-define=SKIP_EXISTANT=true
+flutter test integration_test/capture_test.dart --dart-define=SKIP_EXISTANT=true
 
 ```
 
