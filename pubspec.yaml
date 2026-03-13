@@ -1,7 +1,8 @@
 name: flutter_screenshot_generator
 description: "Generate screenshots for a Flutter application across different screens and languages."
 version: 1.0.0
-homepage:
+homepage: https://github.com/lyskouski/flutter_screenshot_generator
+repository: https://github.com/lyskouski/flutter_screenshot_generator
 
 environment:
   sdk: ^3.11.0
