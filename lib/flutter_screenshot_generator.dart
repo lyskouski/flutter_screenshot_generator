@@ -44,46 +44,62 @@ class ScreenshotGenerator {
     _initLocales();
   }
 
-  // flutter test integration_test/screenshots/capture_test.dart --dart-define=SCREENSHOT_DEVICES="iPhone 15 Pro"
+  // flutter test integration_test/capture_test.dart --dart-define=SCREENSHOT_DEVICES="iPhone 15 Pro"
   void _initDevices() {
     final enabledDevices = config.getEnabledDevices();
-    final deviceCsv = String.fromEnvironment('SCREENSHOT_DEVICES');
-    final deviceFilter = deviceCsv.split(',').map((v) => v.trim()).where((v) => v.isNotEmpty).toSet();
-    bool matchesDeviceFilter(DeviceConfig device) {
-      if (deviceFilter.isEmpty) {
-        return true;
-      }
-      final name = device.name;
-      final normalized = name.toLowerCase();
-      final underscored = name.replaceAll(' ', '_').toLowerCase();
-      return deviceFilter.any((f) {
-        final ff = f.toLowerCase();
-        return ff == normalized || ff == underscored;
-      });
+    const deviceCsv = String.fromEnvironment('SCREENSHOT_DEVICES');
+
+    print('DEBUG: SCREENSHOT_DEVICES environment variable: "$deviceCsv"');
+
+    if (deviceCsv.isNotEmpty) {
+      final deviceFilter = deviceCsv.split(',').map((v) => v.trim()).where((v) => v.isNotEmpty).toList();
+      print('DEBUG: Device filter set: $deviceFilter');
+
+      devices = enabledDevices.where((device) =>
+          deviceFilter.any((filter) => device.name == filter),
+      ).toList();
+
+      print('DEBUG: Filtered devices count: ${devices.length} out of ${enabledDevices.length}');
+      print('DEBUG: Selected devices: ${devices.map((d) => d.name).toList()}');
+    } else {
+      devices = enabledDevices;
+      print('DEBUG: No device filter specified, using all ${devices.length} devices');
     }
-    devices = enabledDevices.where(matchesDeviceFilter).toList();
   }
 
-  // flutter test integration_test/screenshots/capture_test.dart --dart-define=SCREENSHOT_LOCALES=en
+  // flutter test integration_test/capture_test.dart --dart-define=SCREENSHOT_LOCALES=en_US
   void _initLocales() {
-    final localeCsv = String.fromEnvironment('SCREENSHOT_LOCALES');
-    final localeFilter = localeCsv.split(',').map((v) => v.trim()).where((v) => v.isNotEmpty).toSet();
-    if (localeFilter.isNotEmpty) {
-      locales = locales.where((l) => localeFilter.contains(l.toString())).toList();
+    const localeCsv = String.fromEnvironment('SCREENSHOT_LOCALES');
+    print('DEBUG: SCREENSHOT_LOCALES environment variable: "$localeCsv"');
+
+    if (localeCsv.isNotEmpty) {
+      final localeFilter = localeCsv.split(',').map((v) => v.trim()).where((v) => v.isNotEmpty).toList();
+      print('DEBUG: Locale filter set: $localeFilter');
+      print('DEBUG: Available locales: ${locales.map((l) => l.toString()).toList()}');
+
+      final originalCount = locales.length;
+      locales = locales.where((locale) =>
+          localeFilter.any((filter) => locale.toString() == filter),
+      ).toList();
+
+      print('DEBUG: Filtered locales count: ${locales.length} out of $originalCount');
+      print('DEBUG: Selected locales: ${locales.map((l) => l.toString()).toList()}');
+    } else {
+      print('DEBUG: No locale filter specified, using all ${locales.length} locales');
     }
   }
 
-  // Allow test code to inject steps to be run for each device/locale combination. 
+  // Allow test code to inject steps to be run for each device/locale combination.
   // Steps will be run in the order they were injected.
   void inject(String title, {StepFunction? before}) => steps[title] = before;
 
   // Main entry point to run the screenshot generation process
   void run() {
-    // flutter test integration_test/screenshots/capture_test.dart --dart-define=SCREENSHOT_STEPS=4_m_budgets
+    // flutter test integration_test/capture_test.dart --dart-define=SCREENSHOT_STEPS=1_home
     const stepCsv = String.fromEnvironment('SCREENSHOT_STEPS');
     final stepFilter = stepCsv.split(',').map((v) => v.trim()).where((v) => v.isNotEmpty).toSet();
 
-    // flutter test integration_test/screenshots/capture_test.dart --dart-define=SKIP_EXISTANT=true
+    // flutter test integration_test/capture_test.dart --dart-define=SKIP_EXISTANT=true
     const skipExistant = String.fromEnvironment('SKIP_EXISTANT');
     final shouldSkipExisting = skipExistant.toLowerCase() == 'true' || skipExistant == '1';
 
@@ -93,7 +109,7 @@ class ScreenshotGenerator {
       for (final device in devices) {
         // Check if we should skip this locale/device combination
         if (shouldSkipExisting) {
-          final deviceFolderName = device.name.replaceAll(' ', '_').replaceAll(RegExp(r'[^\w\-_]'), '');
+          final deviceFolderName = device.name.replaceAll(' ', '_').replaceAll(RegExp(r'[^\w\-\._]'), '');
           final outputPath = Directory('${config.outputDirectory}/$localeCode/$deviceFolderName');
           if (outputPath.existsSync()) {
             print('Skipping $localeCode/${device.name} - folder exists with screenshots');
